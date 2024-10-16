@@ -8,7 +8,14 @@ window.addEventListener('error', (event) => {
 const quiz = function () {
     try {
         const startBtn = document.querySelector('.start-button')
+        let timeID
+        let time = 90
+        const timerDisplay = document.querySelector('.timer')
+        let total = 0
 
+
+        let isStarting = false;
+        
 
         const correctAnswers = {
             firstAdd: 10,
@@ -23,8 +30,7 @@ const quiz = function () {
             input.classList.remove('correct', 'incorrect');
             
             if (value === '') {
-                console.log(`Empty input for ${input.dataset.info}`);
-                input.classList.add('incorrect');
+               return false
             }
     
             const parsedValue = parseFloat(value);
@@ -33,29 +39,70 @@ const quiz = function () {
             return isCorrect;
         };
     
-        const startQuiz = function () {
-            let total = 0
+        const calculateScore = function () {
+            let allAnswered = true;
+            total = 0
             const inputs = document.querySelectorAll('input')
-            console.log(inputs);
+            // console.log(inputs);
             inputs.forEach(input => {
                 const info = input.dataset.info
                 if (info in correctAnswers) {
-                    validateAndMarkInput(input, correctAnswers[info]);
-                    if (validateAndMarkInput(input, correctAnswers[info])) {
+                    if (input.value.trim() === '') {
+                        allAnswered = false;
+                    }else if (validateAndMarkInput(input, correctAnswers[info])) {
                         total += 20; // 20% for each correct answer
                     }
                 } else {
                     console.log(`Unknown input type: ${info}`);
                 }                   
             })
-            window.alert(`You managed to answer ${total}% of the questions correctly`);
+            return { score: total, allAnswered: allAnswered };
         }
 
-        const totalScore = (input, correctAnswer) => {
-            const value = input.value.trim();
-            const parsedValue = parseFloat(value);
-            if (parsedValue === correctAnswer) {
-                total += 20;
+        const endQuiz = function() {
+            clearInterval(timeID);
+            isStarting = false;
+            startBtn.textContent = 'Start Quiz';
+            const { score } = calculateScore();
+            window.alert(`Quiz ended! You managed to answer ${score}% of the questions correctly`);
+        };
+
+
+
+        const startQuiz = function () {
+            if(!isStarting){
+                isStarting = true
+                startBtn.textContent = 'Quiz in Progress'
+                time = 90
+                timerDisplay.textContent = time;
+                const inputs = document.querySelectorAll('input');
+                inputs.forEach(input => {
+                    input.value = ''; // Clear inputs
+                    input.classList.remove('correct', 'incorrect'); // Remove previous markings
+                    input.addEventListener('change', checkCompletion); // Add input listener
+                });
+                timer()
+            }
+        }
+
+        // timer
+
+        function timer() {
+            timeID = setInterval(() =>{
+                time--
+                timerDisplay.textContent = time
+                if(time <= 0){
+                    endQuiz()
+                }
+            },1000)            
+        }
+        
+        function checkCompletion() {
+            if (isStarting) {
+                const { allAnswered } = calculateScore();
+                if (allAnswered) {
+                    endQuiz();
+                }
             }
         }
 
